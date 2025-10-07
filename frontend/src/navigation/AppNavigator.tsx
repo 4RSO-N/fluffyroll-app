@@ -19,7 +19,7 @@ import FitnessProfileScreen from '../screens/Onboarding/FitnessProfileScreen';
 import CompleteScreen from '../screens/Onboarding/CompleteScreen';
 
 // Main Screens
-import EnhancedDashboardScreen from '../screens/Dashboard/EnhancedDashboardScreen';
+import SimplifiedDashboardScreen from '../screens/Dashboard/SimplifiedDashboardScreen';
 import FitnessScreen from '../screens/Fitness/FitnessScreen';
 import HabitsScreen from '../screens/Habits/HabitsScreen';
 import ProfileScreen from '../screens/Dashboard/ProfileScreen';
@@ -72,7 +72,7 @@ function MainTabs() {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={EnhancedDashboardScreen} />
+      <Tab.Screen name="Home" component={SimplifiedDashboardScreen} />
       <Tab.Screen name="Fitness" component={FitnessScreen} />
       <Tab.Screen name="Habits" component={HabitsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
