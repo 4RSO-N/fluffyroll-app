@@ -1,29 +1,37 @@
 export const Colors = {
-  primary: '#005B6A',
-  primaryLight: '#008B9C',
-  primaryDark: '#003840',
+  // Primary colors
+  primary: '#667eea',
+  primaryLight: '#8896f0',
+  primaryDark: '#4c63d2',
   
-  secondary: '#FF6B9D',
-  secondaryLight: '#FFB5D1',
+  // Secondary colors
+  secondary: '#764ba2',
+  secondaryLight: '#9d7bc7',
+  secondaryDark: '#5a3780',
   
-  accent: '#FFD93D',
+  // Status colors
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
+  info: '#2196F3',
   
-  background: '#F8F9FA',
-  surface: '#FFFFFF',
+  // Neutral colors
+  background: '#f8fafc',
+  surface: '#ffffff',
+  card: '#ffffff',
   
-  text: '#1A1A1A',
-  textSecondary: '#6B7280',
-  textLight: '#9CA3AF',
+  // Text colors
+  text: '#1a202c',
+  textSecondary: '#64748b',
+  textLight: '#94a3b8',
   
-  success: '#10B981',
-  warning: '#F59E0B',
-  error: '#EF4444',
-  info: '#3B82F6',
+  // Border colors
+  border: '#e2e8f0',
+  borderLight: '#f1f5f9',
   
-  border: '#E5E7EB',
-  divider: '#F3F4F6',
-  
-  shadow: '#000000',
+  // Gradients
+  gradientStart: '#667eea',
+  gradientEnd: '#764ba2',
 };
 
 export const Spacing = {
@@ -35,14 +43,6 @@ export const Spacing = {
   xxl: 48,
 };
 
-export const BorderRadius = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-  full: 9999,
-};
-
 export const FontSizes = {
   xs: 12,
   sm: 14,
@@ -51,4 +51,13 @@ export const FontSizes = {
   xl: 20,
   xxl: 24,
   xxxl: 32,
+};
+
+export const BorderRadius = {
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  xxl: 24,
+  full: 9999,
 };
