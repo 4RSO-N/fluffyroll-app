@@ -1,8 +1,8 @@
-# Dashboard Enhancement - AuraSync
+# Dashboard Enhancement - FluffyRoll
 
 ## Overview
 
-The AuraSync dashboard has been significantly enhanced with advanced analytics, intelligent insights, and improved user experience. This update transforms the basic dashboard into a comprehensive health tracking command center.
+The FluffyRoll dashboard has been significantly enhanced with advanced analytics, intelligent insights, and improved user experience. This update transforms the basic dashboard into a comprehensive health tracking command center.
 
 ## New Features
 

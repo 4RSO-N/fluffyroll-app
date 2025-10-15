@@ -1,7 +1,7 @@
 {
-  "name": "aurasync-backend",
+  "name": "fluffyroll-backend",
   "version": "1.0.0",
-  "description": "AuraSync API Server",
+  "description": "FluffyRoll API Server",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",

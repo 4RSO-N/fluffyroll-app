@@ -1,7 +1,7 @@
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
-const API_BASE_URL = 'http://localhost:3000/api'; // Change this to your backend URL
+const API_BASE_URL = 'http://10.1.0.7:3000/api/v1'; // Updated to use your IP address for mobile device testing
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -10,7 +10,7 @@ const api = axios.create({
 
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('accessToken');
+  const token = await SecureStore.getItemAsync('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -21,9 +21,10 @@ export const fitnessAPI = {
   // Dashboard
   getDashboard: async () => {
     try {
-      const response = await api.get('/dashboard');
+      const response = await api.get('/fitness/dashboard');
       return response.data;
     } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
       // Return mock data if API fails
       return {
         caloriesConsumed: 1850,
@@ -45,9 +46,10 @@ export const fitnessAPI = {
   // Water logging
   logWater: async (glasses: number) => {
     try {
-      const response = await api.post('/water', { glasses });
+      const response = await api.post('/fitness/water', { glasses });
       return response.data;
     } catch (error) {
+      console.error('Failed to log water:', error);
       console.log('Mock: Logged', glasses, 'glasses of water');
       return { success: true };
     }
@@ -56,10 +58,35 @@ export const fitnessAPI = {
   // Meal logging
   createMeal: async (mealData: any) => {
     try {
-      const response = await api.post('/meals', mealData);
+      const response = await api.post('/fitness/meals', mealData);
       return response.data;
     } catch (error) {
+      console.error('Failed to log meal:', error);
       console.log('Mock: Logged meal:', mealData);
+      return { success: true };
+    }
+  },
+
+  // Profile management
+  updateProfile: async (profileData: any) => {
+    try {
+      const response = await api.post('/fitness/profile', profileData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      console.log('Mock: Updated profile:', profileData);
+      return { success: true };
+    }
+  },
+
+  // Workout logging
+  createWorkout: async (workoutData: any) => {
+    try {
+      const response = await api.post('/fitness/workouts', workoutData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to log workout:', error);
+      console.log('Mock: Logged workout:', workoutData);
       return { success: true };
     }
   },

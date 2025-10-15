@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fitnessAPI } from '../../services/api';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function CompleteScreen({ navigation, route }: any) {
-  const [saving, setSaving] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { updateOnboardingStatus } = useAuth();
   const userData = route.params;
-
-  useEffect(() => {
-    saveUserData();
-  }, []);
 
   const saveUserData = async () => {
     try {
@@ -18,7 +16,7 @@ export default function CompleteScreen({ navigation, route }: any) {
       await AsyncStorage.setItem('onboardingComplete', 'true');
 
       // If fitness goals exist, save fitness profile
-      if (userData && userData.dailyCalorieGoal) {
+      if (userData?.dailyCalorieGoal) {
         await fitnessAPI.updateProfile({
           currentWeightKg: userData.currentWeightKg,
           targetWeightKg: userData.targetWeightKg,
@@ -82,12 +80,19 @@ export default function CompleteScreen({ navigation, route }: any) {
       <View style={styles.buttons}>
         <TouchableOpacity 
           style={styles.primaryButton} 
-          onPress={() => {
-            // Navigator will automatically detect onboarding complete
-            // No action needed, just wait for auto-navigation
+          onPress={async () => {
+            try {
+              setSaving(true);
+              await saveUserData();
+              await updateOnboardingStatus(true);
+            } catch (error) {
+              console.error('Error completing onboarding:', error);
+            }
           }}
         >
-          <Text style={styles.primaryButtonText}>Go to Dashboard</Text>
+          <Text style={styles.primaryButtonText}>
+            {saving ? 'Setting up...' : 'Go to Dashboard'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -1,5 +1,6 @@
 -- ========================================
--- COMPLETE AURASYNC DATABASE SCHEMA
+-- Complete FluffyRoll Database Schema
+-- COMPLETE FLUFFYROLL DATABASE SCHEMA
 -- ========================================
 
 -- Enable UUID extension

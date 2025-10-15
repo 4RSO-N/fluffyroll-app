@@ -7,20 +7,19 @@ import Animated, {
   withSpring,
   FadeInRight,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
 
 interface Props {
-  title: string;
-  current: number;
-  target: number;
-  unit: string;
-  icon: string;
-  color: string;
-  streak?: number;
-  onPress?: () => void;
-  delay?: number;
+  readonly title: string;
+  readonly current: number;
+  readonly target: number;
+  readonly unit: string;
+  readonly icon: string;
+  readonly color: string;
+  readonly streak?: number;
+  readonly onPress?: () => void;
+  readonly delay?: number;
 }
 
 export default function AnimatedGoalCard({
@@ -122,14 +121,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   card: {
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   header: {
     flexDirection: 'row',
@@ -156,7 +152,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSizes.md,
     fontWeight: '600',
-    color: Colors.text,
+    color: 'white',
     marginBottom: Spacing.xs,
   },
   streakContainer: {
@@ -178,7 +174,7 @@ const styles = StyleSheet.create({
   },
   targetValue: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.8)',
     marginTop: Spacing.xs,
   },
   progressContainer: {

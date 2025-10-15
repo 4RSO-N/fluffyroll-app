@@ -9,7 +9,6 @@ import {
   RefreshControl,
   Modal,
   TextInput,
-  Alert,
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,12 +18,16 @@ import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme'
 import AnalyticsCard from '../../components/Dashboard/AnalyticsCard';
 import InsightCard from '../../components/Dashboard/InsightCard';
 import GoalCard from '../../components/Dashboard/GoalCard';
+import ModalButton from '../../components/ModalButton';
 import HealthScoreCard from '../../components/Dashboard/HealthScoreCard';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import CustomAlert from '../../components/CustomAlert';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function EnhancedDashboardScreen() {
   const { user } = useAuth();
+  const { alertConfig, isVisible, hideAlert, showError, showSuccess, showInfo } = useCustomAlert();
   const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -106,16 +109,17 @@ export default function EnhancedDashboardScreen() {
       await fitnessAPI.logWater(parseInt(waterGlasses));
       setWaterModalVisible(false);
       setWaterGlasses('1');
-      Alert.alert('Success', 'Water logged successfully! 💧');
+      showSuccess('Success', 'Water logged successfully! 💧');
       loadDashboard();
     } catch (error) {
-      Alert.alert('Error', 'Failed to log water');
+      console.error('Failed to log water:', error);
+      showError('Error', 'Failed to log water');
     }
   };
 
   const handleLogMeal = async () => {
     if (!mealName || !calories) {
-      Alert.alert('Error', 'Please fill in meal name and calories');
+      showError('Error', 'Please fill in meal name and calories');
       return;
     }
 
@@ -140,10 +144,11 @@ export default function EnhancedDashboardScreen() {
       setMealName('');
       setCalories('');
       setProtein('');
-      Alert.alert('Success', 'Meal logged successfully! 🍽️');
+      showSuccess('Success', 'Meal logged successfully! 🍽️');
       loadDashboard();
     } catch (error) {
-      Alert.alert('Error', 'Failed to log meal');
+      console.error('Failed to log meal:', error);
+      showError('Error', 'Failed to log meal');
     }
   };
 
@@ -259,9 +264,9 @@ export default function EnhancedDashboardScreen() {
       {insights.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Today's Insights</Text>
-          {insights.map((insight, index) => (
+          {insights.map((insight) => (
             <InsightCard
-              key={index}
+              key={insight.title}
               title={insight.title}
               message={insight.message}
               type={insight.type}
@@ -362,7 +367,7 @@ export default function EnhancedDashboardScreen() {
 
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => Alert.alert('Log Workout', 'Go to the Fitness tab to log workouts! 💪')}
+            onPress={() => showInfo('Log Workout', 'Go to the Fitness tab to log workouts! 💪')}
           >
             <Ionicons name="barbell" size={32} color={Colors.success} />
             <Text style={styles.actionText}>Log Workout</Text>
@@ -370,7 +375,7 @@ export default function EnhancedDashboardScreen() {
 
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => Alert.alert('Coming Soon', 'Journal feature coming soon! 📝')}
+            onPress={() => showInfo('Coming Soon', 'Journal feature coming soon! 📝')}
           >
             <Ionicons name="journal" size={32} color={Colors.secondary} />
             <Text style={styles.actionText}>Journal</Text>
@@ -400,19 +405,17 @@ export default function EnhancedDashboardScreen() {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+              <ModalButton
+                title="Cancel"
+                type="cancel"
                 onPress={() => setWaterModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+              />
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+              <ModalButton
+                title="Log Water"
+                type="primary"
                 onPress={handleLogWater}
-              >
-                <Text style={styles.submitButtonText}>Log Water</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </View>
@@ -456,23 +459,30 @@ export default function EnhancedDashboardScreen() {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+              <ModalButton
+                title="Cancel"
+                type="cancel"
                 onPress={() => setMealModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+              />
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+              <ModalButton
+                title="Log Meal"
+                type="primary"
                 onPress={handleLogMeal}
-              >
-                <Text style={styles.submitButtonText}>Log Meal</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </View>
       </Modal>
+
+      <CustomAlert 
+        visible={isVisible}
+        onClose={hideAlert}
+        title={alertConfig?.title || ''}
+        message={alertConfig?.message || ''}
+        type={alertConfig?.type}
+        buttons={alertConfig?.buttons}
+      />
     </ScrollView>
   );
 }
@@ -524,7 +534,7 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,

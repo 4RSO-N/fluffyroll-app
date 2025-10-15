@@ -6,13 +6,15 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import CustomAlert from '../../components/CustomAlert';
 
 export default function FitnessProfileScreen({ navigation, route }: any) {
   const userData = route.params;
+  const { alertConfig, isVisible, hideAlert, showError } = useCustomAlert();
   const [targetWeight, setTargetWeight] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
   const [calorieGoal, setCalorieGoal] = useState('2000');
@@ -29,7 +31,7 @@ export default function FitnessProfileScreen({ navigation, route }: any) {
 
   const handleComplete = () => {
     if (!targetWeight || !activityLevel) {
-      Alert.alert('Missing Info', 'Please fill in all required fields');
+      showError('Missing Info', 'Please fill in all required fields');
       return;
     }
 
@@ -48,10 +50,6 @@ export default function FitnessProfileScreen({ navigation, route }: any) {
       const handleSkip = async () => {
     try {
       await AsyncStorage.setItem('onboardingComplete', 'true');
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
     } catch (error) {
       console.error('Skip error:', error);
     }
@@ -155,6 +153,15 @@ export default function FitnessProfileScreen({ navigation, route }: any) {
           <Text style={styles.secondaryButtonText}>Skip</Text>
         </TouchableOpacity>
       </View>
+
+      <CustomAlert 
+        visible={isVisible}
+        onClose={hideAlert}
+        title={alertConfig?.title || ''}
+        message={alertConfig?.message || ''}
+        type={alertConfig?.type}
+        buttons={alertConfig?.buttons}
+      />
     </View>
   );
 }

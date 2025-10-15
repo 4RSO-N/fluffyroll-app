@@ -7,15 +7,20 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  Alert,
   TextInput,
   Modal,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { fitnessAPI } from '../../services/api';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { WarmTheme } from '../../constants/warmTheme';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import CustomAlert from '../../components/CustomAlert';
+import ModalButton from '../../components/ModalButton';
 
 export default function FitnessScreen() {
+  const { alertConfig, isVisible, hideAlert, showError, showSuccess } = useCustomAlert();
   const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,16 +81,17 @@ export default function FitnessScreen() {
       await fitnessAPI.logWater(parseInt(waterGlasses));
       setWaterModalVisible(false);
       setWaterGlasses('1');
-      Alert.alert('Success', 'Water logged successfully!');
+      showSuccess('Success', 'Water logged successfully!');
       loadDashboard();
     } catch (error) {
-      Alert.alert('Error', 'Failed to log water');
+      console.error('Failed to log water:', error);
+      showError('Error', 'Failed to log water');
     }
   };
 
   const handleLogMeal = async () => {
     if (!mealName || !calories) {
-      Alert.alert('Error', 'Please fill in meal name and calories');
+      showError('Error', 'Please fill in meal name and calories');
       return;
     }
 
@@ -110,10 +116,11 @@ export default function FitnessScreen() {
       setMealName('');
       setCalories('');
       setProtein('');
-      Alert.alert('Success', 'Meal logged successfully!');
+      showSuccess('Success', 'Meal logged successfully!');
       loadDashboard();
     } catch (error) {
-      Alert.alert('Error', 'Failed to log meal');
+      console.error('Failed to log meal:', error);
+      showError('Error', 'Failed to log meal');
     }
   };
 
@@ -154,7 +161,7 @@ export default function FitnessScreen() {
 
   const handleLogWorkout = async () => {
     if (!workoutType || !duration) {
-      Alert.alert('Error', 'Please select workout type and duration');
+      showError('Error', 'Please select workout type and duration');
       return;
     }
 
@@ -174,17 +181,18 @@ export default function FitnessScreen() {
       setCaloriesBurned('');
       setWorkoutNotes('');
       setUseAutoCalc(true);
-      Alert.alert('Success', 'Workout logged successfully! 💪');
+      showSuccess('Success', 'Workout logged successfully! 💪');
       loadDashboard();
     } catch (error) {
-      Alert.alert('Error', 'Failed to log workout');
+      console.error('Failed to log workout:', error);
+      showError('Error', 'Failed to log workout');
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
+        <ActivityIndicator size="large" color={WarmTheme.colors.primary} />
       </View>
     );
   }
@@ -203,6 +211,14 @@ export default function FitnessScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Warm Background Gradient */}
+      <LinearGradient
+        colors={WarmTheme.gradients.pageBackground as [string, string, string]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      
       <View style={styles.header}>
         <Text style={styles.title}>Fitness & Nutrition</Text>
         <Text style={styles.subtitle}>Track your daily intake</Text>
@@ -217,7 +233,7 @@ export default function FitnessScreen() {
         {/* Calories Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="flame" size={24} color={Colors.primary} />
+            <Ionicons name="flame" size={24} color={WarmTheme.colors.actionButtons.fitness} />
             <Text style={styles.cardTitle}>Calories</Text>
           </View>
           <Text style={styles.mainValue}>
@@ -230,7 +246,7 @@ export default function FitnessScreen() {
                 styles.progressBarFill,
                 {
                   width: `${Math.min(caloriesPercent, 100)}%`,
-                  backgroundColor: Colors.primary,
+                  backgroundColor: WarmTheme.colors.actionButtons.fitness,
                 },
               ]}
             />
@@ -250,7 +266,7 @@ export default function FitnessScreen() {
               <View
                 style={[
                   styles.miniProgressFill,
-                  { width: `${Math.min(proteinPercent, 100)}%`, backgroundColor: Colors.success },
+                  { width: `${Math.min(proteinPercent, 100)}%`, backgroundColor: WarmTheme.colors.actionButtons.meal },
                 ]}
               />
             </View>
@@ -269,7 +285,7 @@ export default function FitnessScreen() {
                       ((dashboard?.carbsConsumed || 0) / (dashboard?.carbsGoal || 1)) * 100,
                       100
                     )}%`,
-                    backgroundColor: Colors.warning,
+                    backgroundColor: WarmTheme.colors.accent.primary,
                   },
                 ]}
               />
@@ -289,7 +305,7 @@ export default function FitnessScreen() {
                       ((dashboard?.fatConsumed || 0) / (dashboard?.fatGoal || 1)) * 100,
                       100
                     )}%`,
-                    backgroundColor: Colors.secondary,
+                    backgroundColor: WarmTheme.colors.accent.tertiary,
                   },
                 ]}
               />
@@ -300,7 +316,7 @@ export default function FitnessScreen() {
         {/* Water Card */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="water" size={24} color={Colors.info} />
+            <Ionicons name="water" size={24} color={WarmTheme.colors.actionButtons.water} />
             <Text style={styles.cardTitle}>Water Intake</Text>
           </View>
           <Text style={styles.mainValue}>
@@ -313,7 +329,7 @@ export default function FitnessScreen() {
                 styles.progressBarFill,
                 {
                   width: `${Math.min(waterPercent, 100)}%`,
-                  backgroundColor: Colors.info,
+                  backgroundColor: WarmTheme.colors.actionButtons.water,
                 },
               ]}
             />
@@ -326,27 +342,27 @@ export default function FitnessScreen() {
             style={styles.actionButton}
             onPress={() => setMealModalVisible(true)}
           >
-            <Ionicons name="restaurant" size={24} color={Colors.primary} />
+            <Ionicons name="restaurant" size={24} color={WarmTheme.colors.actionButtons.meal} />
             <Text style={styles.actionButtonText}>Log Meal</Text>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={WarmTheme.colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => setWaterModalVisible(true)}
           >
-            <Ionicons name="water" size={24} color={Colors.info} />
+            <Ionicons name="water" size={24} color={WarmTheme.colors.actionButtons.water} />
             <Text style={styles.actionButtonText}>Add Water</Text>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={WarmTheme.colors.primary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => setWorkoutModalVisible(true)}
           >
-            <Ionicons name="barbell" size={24} color={Colors.success} />
+            <Ionicons name="barbell" size={24} color={WarmTheme.colors.actionButtons.fitness} />
             <Text style={styles.actionButtonText}>Log Workout</Text>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+            <Ionicons name="chevron-forward" size={20} color={WarmTheme.colors.primary} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -372,19 +388,16 @@ export default function FitnessScreen() {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+              <ModalButton
+                title="Cancel"
+                type="cancel"
                 onPress={() => setWaterModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+              />
+              <ModalButton
+                title="Log Water"
+                type="primary"
                 onPress={handleLogWater}
-              >
-                <Text style={styles.submitButtonText}>Log Water</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </View>
@@ -428,19 +441,16 @@ export default function FitnessScreen() {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+              <ModalButton
+                title="Cancel"
+                type="cancel"
                 onPress={() => setMealModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+              />
+              <ModalButton
+                title="Log Meal"
+                type="primary"
                 onPress={handleLogMeal}
-              >
-                <Text style={styles.submitButtonText}>Log Meal</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </View>
@@ -529,24 +539,30 @@ export default function FitnessScreen() {
               />
 
               <View style={styles.modalButtons}>
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.cancelButton]}
+                <ModalButton
+                  title="Cancel"
+                  type="cancel"
                   onPress={() => setWorkoutModalVisible(false)}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalButton, styles.submitButton]}
+                />
+                <ModalButton
+                  title="Log Workout"
+                  type="primary"
                   onPress={handleLogWorkout}
-                >
-                  <Text style={styles.submitButtonText}>Log Workout</Text>
-                </TouchableOpacity>
+                />
               </View>
             </View>
           </ScrollView>
         </View>
       </Modal>
+
+      <CustomAlert 
+        visible={isVisible}
+        onClose={hideAlert}
+        title={alertConfig?.title || ''}
+        message={alertConfig?.message || ''}
+        type={alertConfig?.type}
+        buttons={alertConfig?.buttons}
+      />
     </View>
   );
 }
@@ -554,28 +570,28 @@ export default function FitnessScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
+    backgroundColor: 'transparent',
   },
   header: {
     padding: Spacing.lg,
     paddingTop: Spacing.xl + 20,
-    backgroundColor: Colors.surface,
+    backgroundColor: 'transparent',
   },
   title: {
     fontSize: FontSizes.xxl,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: WarmTheme.colors.primary,
     marginBottom: Spacing.xs,
   },
   subtitle: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: WarmTheme.colors.primary,
   },
   content: {
     flex: 1,
@@ -586,10 +602,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   cardHeader: {
@@ -600,23 +616,23 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: FontSizes.lg,
     fontWeight: '600',
-    color: Colors.text,
+    color: WarmTheme.colors.primary,
     marginLeft: Spacing.sm,
   },
   mainValue: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: WarmTheme.colors.primary,
     marginBottom: Spacing.sm,
   },
   goalValue: {
     fontSize: FontSizes.lg,
-    color: Colors.textSecondary,
+    color: WarmTheme.colors.primary,
     fontWeight: 'normal',
   },
   progressBarBg: {
     height: 8,
-    backgroundColor: Colors.border,
+    backgroundColor: 'rgba(139,69,19,0.2)',
     borderRadius: BorderRadius.full,
     overflow: 'hidden',
     marginBottom: Spacing.sm,
@@ -627,7 +643,7 @@ const styles = StyleSheet.create({
   },
   remaining: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: WarmTheme.colors.primary,
   },
   macrosRow: {
     flexDirection: 'row',
@@ -640,25 +656,25 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   macroLabel: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
+    color: WarmTheme.colors.primary,
     marginBottom: Spacing.xs,
   },
   macroValue: {
     fontSize: FontSizes.xl,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: WarmTheme.colors.primary,
   },
   macroGoal: {
     fontSize: FontSizes.xs,
-    color: Colors.textLight,
+    color: WarmTheme.colors.primary,
     marginBottom: Spacing.xs,
   },
   miniProgressBg: {
@@ -682,17 +698,17 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   actionButtonText: {
     flex: 1,
     fontSize: FontSizes.md,
     fontWeight: '600',
-    color: Colors.text,
+    color: WarmTheme.colors.primary,
     marginLeft: Spacing.md,
   },
   modalOverlay: {
@@ -800,21 +816,26 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    padding: Spacing.md,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
+    overflow: 'hidden', // Important for gradient
+  },
+  buttonGradient: {
+    width: '100%',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: Colors.border,
     marginRight: Spacing.sm,
   },
   cancelButtonText: {
-    color: Colors.text,
+    color: '#FFFFFF',
     fontSize: FontSizes.md,
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: Colors.primary,
     marginLeft: Spacing.sm,
   },
   submitButtonText: {

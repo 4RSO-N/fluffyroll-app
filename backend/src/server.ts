@@ -18,10 +18,7 @@ const app: Application = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:19006',
-  credentials: true,
-}));
+app.use(cors());
 
 // Rate limiting
 const limiter = rateLimit({
@@ -64,7 +61,7 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 const HOST = '0.0.0.0';
 
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 AuraSync API server running on port ${PORT}`);
+  console.log(`🚀 FluffyRoll API server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 

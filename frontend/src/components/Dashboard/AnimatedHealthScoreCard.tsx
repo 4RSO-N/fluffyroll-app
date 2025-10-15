@@ -1,204 +1,168 @@
-import React, { useEffect } from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
   withSpring,
-  FadeInUp,
+  withTiming,
+  withDelay,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { Spacing, FontSizes, BorderRadius } from '../../constants/theme';
 
 interface Props {
-  score: number;
-  previousScore?: number;
-  breakdown: {
-    fitness: number;
-    nutrition: number;
-    hydration: number;
+  readonly score: number;
+  readonly previousScore?: number;
+  readonly breakdown: {
+    readonly fitness: number;
+    readonly nutrition: number;
+    readonly hydration: number;
   };
 }
 
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
 export default function AnimatedHealthScoreCard({ score, previousScore = 0, breakdown }: Props) {
-  const scoreAnimation = useSharedValue(0);
-  const fitnessAnimation = useSharedValue(0);
-  const nutritionAnimation = useSharedValue(0);
-  const hydrationAnimation = useSharedValue(0);
+  // Animation values
+  const opacity = useSharedValue(0);
+  const scale = useSharedValue(0.8);
+  const displayScore = useSharedValue(previousScore);
 
-  useEffect(() => {
-    scoreAnimation.value = withSpring(score, { damping: 15, stiffness: 100 });
-    fitnessAnimation.value = withTiming(breakdown.fitness, { duration: 1000 });
-    nutritionAnimation.value = withTiming(breakdown.nutrition, { duration: 1200 });
-    hydrationAnimation.value = withTiming(breakdown.hydration, { duration: 1400 });
-  }, [score, breakdown]);
+  // Initialize animations
+  React.useEffect(() => {
+    opacity.value = withDelay(300, withTiming(1, { duration: 500 }));
+    scale.value = withDelay(300, withSpring(1, { damping: 15 }));
+    displayScore.value = withDelay(500, withTiming(score, { duration: 1000 }));
+  }, [score]);
 
-  const scoreStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scoreAnimation.value > 0 ? 1 : 0.8) }],
+  // Animated styles
+  const containerStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ scale: scale.value }],
   }));
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return Colors.success;
-    if (score >= 60) return Colors.warning;
-    return Colors.error;
-  };
-
-  const getScoreEmoji = (score: number) => {
-    if (score >= 90) return '🔥';
-    if (score >= 80) return '💪';
-    if (score >= 70) return '👍';
-    if (score >= 60) return '📈';
-    return '💡';
-  };
+  // Render score using callback to prevent access during render
+  const renderScore = useCallback(() => {
+    'worklet';
+    return Math.round(displayScore.value).toString();
+  }, []);
 
   return (
-    <Animated.View entering={FadeInUp.delay(500)} style={styles.container}>
-      <LinearGradient
-        colors={[Colors.surface, '#f8f9ff']}
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <View style={styles.header}>
-          <View style={styles.titleContainer}>
-            <Ionicons name="analytics" size={24} color={Colors.primary} />
-            <Text style={styles.title}>Health Score</Text>
+    <Animated.View style={[styles.container, containerStyle]}>
+      <View style={styles.transparentCard}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.title}>💖 Health Score</Text>
+            <Text style={styles.subtitle}>Your wellness journey today</Text>
           </View>
-          <Text style={styles.emoji}>{getScoreEmoji(score)}</Text>
-        </View>
-
-        <Animated.View style={[styles.scoreContainer, scoreStyle]}>
-          <Text style={[styles.score, { color: getScoreColor(score) }]}>
-            {Math.round(score)}
-          </Text>
-          <Text style={styles.scoreLabel}>out of 100</Text>
-          {previousScore > 0 && (
-            <View style={styles.changeContainer}>
-              <Ionicons 
-                name={score > previousScore ? "trending-up" : "trending-down"} 
-                size={16} 
-                color={score > previousScore ? Colors.success : Colors.error} 
-              />
-              <Text style={[
-                styles.changeText, 
-                { color: score > previousScore ? Colors.success : Colors.error }
-              ]}>
-                {Math.abs(score - previousScore).toFixed(1)} from yesterday
-              </Text>
+          
+          <View style={styles.scoreSection}>
+            <View style={styles.scoreContainer}>
+              <AnimatedText style={styles.score}>
+                {renderScore()}
+              </AnimatedText>
+              <Text style={styles.scoreLabel}>Wellness Points</Text>
             </View>
-          )}
-        </Animated.View>
-
-        <View style={styles.breakdown}>
-          <View style={styles.breakdownItem}>
-            <View style={styles.breakdownHeader}>
-              <Ionicons name="barbell" size={20} color={Colors.primary} />
-              <Text style={styles.breakdownLabel}>Fitness</Text>
+            
+            <View style={styles.breakdownContainer}>
+              <View style={styles.breakdownItem}>
+                <View style={[styles.breakdownBar, { backgroundColor: 'rgba(76, 175, 80, 0.8)' }]}>
+                  <View style={[styles.breakdownFill, { width: `${breakdown.fitness}%`, backgroundColor: '#4CAF50' }]} />
+                </View>
+                <Text style={styles.breakdownLabel}>Fitness {breakdown.fitness}%</Text>
+              </View>
+              
+              <View style={styles.breakdownItem}>
+                <View style={[styles.breakdownBar, { backgroundColor: 'rgba(255, 152, 0, 0.8)' }]}>
+                  <View style={[styles.breakdownFill, { width: `${breakdown.nutrition}%`, backgroundColor: '#FF9800' }]} />
+                </View>
+                <Text style={styles.breakdownLabel}>Nutrition {breakdown.nutrition}%</Text>
+              </View>
+              
+              <View style={styles.breakdownItem}>
+                <View style={[styles.breakdownBar, { backgroundColor: 'rgba(33, 150, 243, 0.8)' }]}>
+                  <View style={[styles.breakdownFill, { width: `${breakdown.hydration}%`, backgroundColor: '#2196F3' }]} />
+                </View>
+                <Text style={styles.breakdownLabel}>Hydration {breakdown.hydration}%</Text>
+              </View>
             </View>
-            <Text style={styles.breakdownValue}>{breakdown.fitness}%</Text>
-          </View>
-
-          <View style={styles.breakdownItem}>
-            <View style={styles.breakdownHeader}>
-              <Ionicons name="nutrition" size={20} color={Colors.success} />
-              <Text style={styles.breakdownLabel}>Nutrition</Text>
-            </View>
-            <Text style={styles.breakdownValue}>{breakdown.nutrition}%</Text>
-          </View>
-
-          <View style={styles.breakdownItem}>
-            <View style={styles.breakdownHeader}>
-              <Ionicons name="water" size={20} color={Colors.info} />
-              <Text style={styles.breakdownLabel}>Hydration</Text>
-            </View>
-            <Text style={styles.breakdownValue}>{breakdown.hydration}%</Text>
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginHorizontal: Spacing.lg,
+    marginVertical: Spacing.sm,
+  },
+  transparentCard: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: BorderRadius.xl,
     overflow: 'hidden',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
-  gradient: {
+  content: {
     padding: Spacing.lg,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: Spacing.lg,
-  },
-  titleContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
   },
   title: {
     fontSize: FontSizes.lg,
     fontWeight: '700',
-    color: Colors.text,
-    marginLeft: Spacing.sm,
+    color: 'white',
+    textAlign: 'center',
+    marginBottom: Spacing.xs,
   },
-  emoji: {
-    fontSize: 28,
+  subtitle: {
+    fontSize: FontSizes.sm,
+    color: 'rgba(255,255,255,0.8)',
+    textAlign: 'center',
+  },
+  scoreSection: {
+    alignItems: 'center',
   },
   scoreContainer: {
     alignItems: 'center',
     marginBottom: Spacing.lg,
   },
   score: {
-    fontSize: 48,
-    fontWeight: 'bold',
+    fontSize: 56,
+    fontWeight: '800',
+    color: 'white',
+    textShadowColor: 'rgba(0,0,0,0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   scoreLabel: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.9)',
     marginTop: Spacing.xs,
+    fontWeight: '500',
   },
-  changeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.sm,
-  },
-  changeText: {
-    fontSize: FontSizes.sm,
-    fontWeight: '600',
-    marginLeft: Spacing.xs,
-  },
-  breakdown: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.md,
+  breakdownContainer: {
+    width: '100%',
   },
   breakdownItem: {
-    alignItems: 'center',
-    flex: 1,
+    marginBottom: Spacing.md,
   },
-  breakdownHeader: {
-    alignItems: 'center',
+  breakdownBar: {
+    height: 8,
+    borderRadius: 4,
     marginBottom: Spacing.xs,
+    overflow: 'hidden',
+  },
+  breakdownFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   breakdownLabel: {
     fontSize: FontSizes.xs,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
+    color: 'rgba(255,255,255,0.9)',
     fontWeight: '600',
-  },
-  breakdownValue: {
-    fontSize: FontSizes.md,
-    fontWeight: 'bold',
-    color: Colors.text,
   },
 });

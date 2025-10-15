@@ -11,10 +11,13 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { fitnessAPI } from '../../services/api';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { WarmTheme } from '../../constants/warmTheme';
+import ModalButton from '../../components/ModalButton';
 
 export default function DashboardScreen() {
   const { user } = useAuth();
@@ -75,6 +78,7 @@ export default function DashboardScreen() {
       Alert.alert('Success', 'Water logged successfully! 💧');
       loadDashboard();
     } catch (error) {
+      console.error('Failed to log water:', error);
       Alert.alert('Error', 'Failed to log water');
     }
   };
@@ -109,6 +113,7 @@ export default function DashboardScreen() {
       Alert.alert('Success', 'Meal logged successfully! 🍽️');
       loadDashboard();
     } catch (error) {
+      console.error('Failed to log meal:', error);
       Alert.alert('Error', 'Failed to log meal');
     }
   };
@@ -130,13 +135,22 @@ export default function DashboardScreen() {
     : 0;
 
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <View style={styles.header}>
+    <View style={styles.container}>
+      {/* Beige Background Gradient */}
+      <LinearGradient
+        colors={WarmTheme.gradients.pageBackground as [string, string, string]}
+        style={StyleSheet.absoluteFillObject}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      
+      <ScrollView
+        style={styles.scrollContainer}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.header}>
         <View>
           <Text style={styles.greeting}>Hello, {user?.displayName}! 👋</Text>
           <Text style={styles.date}>
@@ -149,7 +163,7 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Quick Stats */}
+      {/* Quick Stats - Updated */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Today's Overview</Text>
         
@@ -293,19 +307,17 @@ export default function DashboardScreen() {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+              <ModalButton
+                title="Cancel"
+                type="cancel"
                 onPress={() => setWaterModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+              />
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+              <ModalButton
+                title="Log Water"
+                type="primary"
                 onPress={handleLogWater}
-              >
-                <Text style={styles.submitButtonText}>Log Water</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </View>
@@ -349,31 +361,32 @@ export default function DashboardScreen() {
             />
 
             <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+              <ModalButton
+                title="Cancel"
+                type="cancel"
                 onPress={() => setMealModalVisible(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
+              />
 
-              <TouchableOpacity
-                style={[styles.modalButton, styles.submitButton]}
+              <ModalButton
+                title="Log Meal"
+                type="primary"
                 onPress={handleLogMeal}
-              >
-                <Text style={styles.submitButtonText}>Log Meal</Text>
-              </TouchableOpacity>
+              />
             </View>
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
   },
   loadingContainer: {
     flex: 1,
@@ -417,10 +430,10 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginBottom: Spacing.md,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   iconCircle: {
@@ -450,10 +463,10 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.md,
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   progressHeader: {
@@ -492,10 +505,10 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     marginBottom: Spacing.md,
     alignItems: 'center',
-    shadowColor: Colors.shadow,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   actionText: {
@@ -546,21 +559,26 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
-    padding: Spacing.md,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  buttonGradient: {
+    width: '100%',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cancelButton: {
-    backgroundColor: Colors.border,
     marginRight: Spacing.sm,
   },
   cancelButtonText: {
-    color: Colors.text,
+    color: '#FFFFFF',
     fontSize: FontSizes.md,
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: Colors.primary,
     marginLeft: Spacing.sm,
   },
   submitButtonText: {

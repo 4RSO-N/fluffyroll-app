@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
 
 export default function GoalsScreen({ navigation }: any) {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const { updateOnboardingStatus } = useAuth();
 
   const goals = [
-    { id: 'fitness', label: 'Track Fitness & Nutrition', icon: 'fitness' },
-    { id: 'habits', label: 'Build Healthy Habits', icon: 'checkmark-circle' },
-    { id: 'cycle', label: 'Track Menstrual Cycle', icon: 'calendar' },
-    { id: 'mental', label: 'Improve Mental Wellness', icon: 'heart' },
-    { id: 'journal', label: 'Daily Journaling', icon: 'book' },
+    { id: 'fitness', label: 'Track Fitness & Nutrition', icon: 'barbell-outline' },
+    { id: 'habits', label: 'Build Healthy Habits', icon: 'leaf-outline' },
+    { id: 'cycle', label: 'Track Menstrual Cycle', icon: 'calendar-outline' },
+    { id: 'mental', label: 'Improve Mental Wellness', icon: 'heart-outline' },
+    { id: 'journal', label: 'Daily Journaling', icon: 'book-outline' },
   ];
 
   const toggleGoal = (goalId: string) => {
@@ -24,22 +25,19 @@ export default function GoalsScreen({ navigation }: any) {
   };
 
   const handleContinue = () => {
-    navigation.navigate('OnboardingBasicInfo', { goals: selectedGoals });
+    // Here you would typically save the goals to your backend or state management
+    console.log('Selected goals:', selectedGoals);
+    navigation.navigate('Complete');
   };
 
-     const handleSkip = async () => {
+  const handleSkip = async () => {
     try {
-      await AsyncStorage.setItem('onboardingComplete', 'true');
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
+      await updateOnboardingStatus(true);
+      navigation.navigate('Main');
     } catch (error) {
       console.error('Skip error:', error);
     }
   };
-
-
 
   return (
     <View style={styles.container}>

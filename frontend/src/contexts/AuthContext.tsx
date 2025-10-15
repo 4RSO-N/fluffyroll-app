@@ -1,107 +1,243 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// frontend/src/contexts/AuthContext.tsx
+import React, { createContext, useState, useContext, useEffect, ReactNode, useMemo } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
+import API_CONFIG from '../config/api';
+import BiometricAuthService from '../services/biometricAuth';
 
 interface User {
   id: string;
   email: string;
-  displayName: string;
+  name: string;
+  displayName?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
-  logout: () => Promise<void>;
   loading: boolean;
+  isAuthenticated: boolean;
+  hasCompletedOnboarding: boolean;
+  isBiometricEnabled: boolean;
+  isBiometricAvailable: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  loginWithBiometrics: () => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateOnboardingStatus: (completed: boolean) => Promise<void>;
+  enableBiometric: (email: string, password: string) => Promise<boolean>;
+  disableBiometric: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export function AuthProvider({ children }: { readonly children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
 
   useEffect(() => {
-    loadUser();
+    checkAuth();
+    checkBiometricStatus();
   }, []);
 
-  const loadUser = async () => {
+  const checkBiometricStatus = async () => {
     try {
-      const userString = await AsyncStorage.getItem('user');
-      if (userString) {
-        setUser(JSON.parse(userString));
+      const available = await BiometricAuthService.isAvailable();
+      const enabled = await BiometricAuthService.isBiometricEnabled();
+      setIsBiometricAvailable(available);
+      setIsBiometricEnabled(enabled);
+    } catch (error) {
+      console.error('Error checking biometric status:', error);
+    }
+  };
+
+  const checkAuth = async () => {
+    const startTime = Date.now();
+    const minimumLoadingTime = 1500; // 1.5 seconds - enough to see the loading screen
+    
+    try {
+      const token = await SecureStore.getItemAsync('token');
+      const onboardingStatus = await SecureStore.getItemAsync('onboardingCompleted');
+      
+      if (token) {
+        // Set axios default header
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // For now, just set a dummy user if token exists
+        const dummyUser = { 
+          id: '1', 
+          email: 'user@example.com', 
+          name: 'User',
+          displayName: 'Test User'
+        };
+        setUser(dummyUser);
+        setIsAuthenticated(true);
+        setHasCompletedOnboarding(onboardingStatus === 'true');
+      } else {
+        setIsAuthenticated(false);
+        setHasCompletedOnboarding(false);
       }
     } catch (error) {
-      console.error('Load user error:', error);
+      console.log('Auth check failed:', error);
+      setIsAuthenticated(false);
+      setHasCompletedOnboarding(false);
     } finally {
-      setLoading(false);
+      // Ensure minimum loading time so users can see the loading screen
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
+      
+      setTimeout(() => {
+        setLoading(false);
+      }, remainingTime);
     }
   };
 
   const login = async (email: string, password: string) => {
     try {
-      // Mock login for development
-      const mockUser = {
-        id: '1',
-        email,
-        displayName: email.split('@')[0],
-      };
+      console.log(`Attempting to log in with email: ${email}`);
       
-      await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
-    } catch (error) {
+      const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/login`, {
+        email,
+        password,
+      });
+      
+      const { accessToken, user } = response.data;
+      await SecureStore.setItemAsync('token', accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      setUser(user);
+      setIsAuthenticated(true);
+
+      // Check if onboarding was completed before
+      const onboardingStatus = await SecureStore.getItemAsync('onboardingCompleted');
+      setHasCompletedOnboarding(onboardingStatus === 'true');
+
+    } catch (error: any) {
       console.error('Login error:', error);
-      throw new Error('Login failed');
+      if (error.response) {
+        throw new Error(error.response.data.message || 'Login failed');
+      } else if (error.request) {
+        throw new Error('Network error. Please check your connection and try again.');
+      } else {
+        throw new Error('An unexpected error occurred');
+      }
     }
   };
 
-  const register = async (email: string, password: string, displayName: string) => {
+  const register = async (name: string, email: string, password: string) => {
     try {
-      // Mock register for development
-      const mockUser = {
-        id: '1',
+      const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/register`, {
         email,
-        displayName,
-      };
+        password,
+        displayName: name,
+      });
       
-      await AsyncStorage.setItem('user', JSON.stringify(mockUser));
-      setUser(mockUser);
-    } catch (error) {
-      console.error('Register error:', error);
-      throw new Error('Registration failed');
+      const { accessToken, user } = response.data;
+      await SecureStore.setItemAsync('token', accessToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+      setUser(user);
+      setIsAuthenticated(true);
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      if (error.response) {
+        throw new Error(error.response.data.message || 'Registration failed');
+      } else if (error.request) {
+        throw new Error('Network error. Please check your connection and try again.');
+      } else {
+        throw new Error('An unexpected error occurred');
+      }
     }
   };
 
   const logout = async () => {
+    await SecureStore.deleteItemAsync('token');
+    await SecureStore.deleteItemAsync('onboardingCompleted');
+    delete axios.defaults.headers.common['Authorization'];
+    setUser(null);
+    setIsAuthenticated(false);
+    setHasCompletedOnboarding(false);
+  };
+
+  const updateOnboardingStatus = async (completed: boolean) => {
     try {
-      await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('accessToken');
-      await AsyncStorage.removeItem('refreshToken');
-      setUser(null);
+      await SecureStore.setItemAsync('onboardingCompleted', completed.toString());
+      setHasCompletedOnboarding(completed);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Failed to update onboarding status:', error);
     }
   };
 
-  const value = {
-    user,
-    login,
-    register,
-    logout,
-    loading,
+  const loginWithBiometrics = async () => {
+    try {
+      const result = await BiometricAuthService.authenticateWithBiometrics();
+      
+      if (!result.success || !result.userInfo) {
+        throw new Error(result.error || 'Biometric authentication failed');
+      }
+
+      // Use the stored credentials to perform regular login
+      await login(result.userInfo.email, result.userInfo.hashedPassword);
+    } catch (error: any) {
+      console.error('Biometric login error:', error);
+      throw error;
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  const enableBiometric = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const result = await BiometricAuthService.enableBiometric(email, password);
+      
+      if (result.success) {
+        setIsBiometricEnabled(true);
+        return true;
+      } else {
+        throw new Error(result.error || 'Failed to enable biometric authentication');
+      }
+    } catch (error: any) {
+      console.error('Enable biometric error:', error);
+      throw error;
+    }
+  };
 
-export const useAuth = () => {
+  const disableBiometric = async () => {
+    try {
+      await BiometricAuthService.disableBiometric();
+      setIsBiometricEnabled(false);
+    } catch (error) {
+      console.error('Disable biometric error:', error);
+      throw error;
+    }
+  };
+
+  const value = useMemo(() => ({
+    user, 
+    loading, 
+    isAuthenticated,
+    hasCompletedOnboarding,
+    isBiometricEnabled,
+    isBiometricAvailable,
+    login,
+    loginWithBiometrics,
+    register, 
+    logout,
+    updateOnboardingStatus,
+    enableBiometric,
+    disableBiometric
+  }), [user, loading, isAuthenticated, hasCompletedOnboarding, isBiometricEnabled, isBiometricAvailable]);
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}

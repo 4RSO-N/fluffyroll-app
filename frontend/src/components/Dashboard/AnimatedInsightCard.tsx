@@ -5,13 +5,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
 
 interface Props {
-  title: string;
-  message: string;
-  type: 'success' | 'warning' | 'info' | 'tip';
-  icon?: string;
-  actionText?: string;
-  onAction?: () => void;
-  delay?: number;
+  readonly title: string;
+  readonly message: string;
+  readonly type: 'success' | 'warning' | 'info' | 'tip';
+  readonly icon?: string;
+  readonly actionText?: string;
+  readonly onAction?: () => void;
+  readonly delay?: number;
 }
 
 export default function AnimatedInsightCard({
@@ -68,15 +68,18 @@ export default function AnimatedInsightCard({
   return (
     <Animated.View 
       entering={FadeInUp.delay(delay)} 
-      style={[
-        styles.container,
-        {
-          backgroundColor: config.backgroundColor,
-          borderLeftColor: config.borderColor,
-        }
-      ]}
+      style={styles.outerContainer}
     >
-      <View style={styles.content}>
+      <View 
+        style={[
+          styles.container,
+          {
+            backgroundColor: config.backgroundColor,
+            borderLeftColor: config.borderColor,
+          }
+        ]}
+      >
+        <View style={styles.content}>
         <View style={styles.header}>
           <Ionicons 
             name={(icon || config.defaultIcon) as any} 
@@ -102,15 +105,19 @@ export default function AnimatedInsightCard({
           </TouchableOpacity>
         )}
       </View>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
   container: {
     borderRadius: BorderRadius.lg,
     borderLeftWidth: 4,
-    marginBottom: Spacing.md,
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

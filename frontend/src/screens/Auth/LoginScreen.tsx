@@ -7,13 +7,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import CustomAlert from '../../components/CustomAlert';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -21,7 +22,9 @@ export default function LoginScreen({ navigation }: any) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const { login, loginWithBiometrics, isBiometricEnabled, isBiometricAvailable } = useAuth();
+  const { alertConfig, isVisible, hideAlert, showError } = useCustomAlert();
 
   useEffect(() => {
     loadSavedCredentials();
@@ -45,7 +48,7 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      showError('Error', 'Please enter email and password');
       return;
     }
 
@@ -65,9 +68,20 @@ export default function LoginScreen({ navigation }: any) {
         await AsyncStorage.removeItem('rememberMe');
       }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      showError('Login Failed', error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBiometricLogin = async () => {
+    setBiometricLoading(true);
+    try {
+      await loginWithBiometrics();
+    } catch (error: any) {
+      showError('Biometric Login Failed', error.message || 'Please try using your password instead.');
+    } finally {
+      setBiometricLoading(false);
     }
   };
 
@@ -146,6 +160,32 @@ export default function LoginScreen({ navigation }: any) {
             )}
           </TouchableOpacity>
 
+          {/* Biometric Login Button - Only show if available and enabled */}
+          {isBiometricAvailable && isBiometricEnabled && (
+            <>
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>OR</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              <TouchableOpacity
+                style={[styles.biometricButton, biometricLoading && styles.buttonDisabled]}
+                onPress={handleBiometricLogin}
+                disabled={biometricLoading || loading}
+              >
+                {biometricLoading ? (
+                  <ActivityIndicator color={Colors.primary} />
+                ) : (
+                  <>
+                    <Ionicons name="finger-print" size={24} color={Colors.primary} />
+                    <Text style={styles.biometricButtonText}>Sign in with biometrics</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          )}
+
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
@@ -154,6 +194,15 @@ export default function LoginScreen({ navigation }: any) {
           </View>
         </View>
       </View>
+
+      <CustomAlert 
+        visible={isVisible}
+        onClose={hideAlert}
+        title={alertConfig?.title || ''}
+        message={alertConfig?.message || ''}
+        type={alertConfig?.type}
+        buttons={alertConfig?.buttons}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -271,5 +320,38 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.sm,
     color: Colors.primary,
     fontWeight: '600',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: Spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  dividerText: {
+    marginHorizontal: Spacing.md,
+    fontSize: FontSizes.sm,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    backgroundColor: Colors.surface,
+    marginBottom: Spacing.lg,
+  },
+  biometricButtonText: {
+    color: Colors.primary,
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+    marginLeft: Spacing.sm,
   },
 });

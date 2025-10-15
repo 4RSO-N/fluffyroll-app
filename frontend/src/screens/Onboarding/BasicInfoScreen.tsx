@@ -6,13 +6,17 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { useAuth } from '../../contexts/AuthContext';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import CustomAlert from '../../components/CustomAlert';
 
 export default function BasicInfoScreen({ navigation, route }: any) {
-  const { goals } = route.params;
+  const { updateOnboardingStatus } = useAuth();
+  const { alertConfig, isVisible, hideAlert, showError } = useCustomAlert();
+  const { goals = [] } = route.params || {};
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
@@ -20,36 +24,40 @@ export default function BasicInfoScreen({ navigation, route }: any) {
 
   const genderOptions = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!age || !gender || !height || !weight) {
-      Alert.alert('Missing Info', 'Please fill in all fields');
+      showError('Missing Info', 'Please fill in all fields');
       return;
     }
 
-    const userData = {
-      goals,
-      age: parseInt(age),
-      gender,
-      heightCm: parseFloat(height),
-      currentWeightKg: parseFloat(weight),
-    };
+    try {
+      const userData = {
+        goals,
+        age: parseInt(age),
+        gender,
+        heightCm: parseFloat(height),
+        currentWeightKg: parseFloat(weight),
+      };
 
-    // If fitness is in goals, go to fitness profile
-    if (goals.includes('fitness')) {
-      navigation.navigate('OnboardingFitnessProfile', userData);
-    } else {
-      navigation.navigate('OnboardingComplete', userData);
+      // Store user data (you would typically send this to your API)
+      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+
+      // If fitness is in goals, go to fitness profile
+      if (goals.includes('fitness')) {
+        navigation.navigate('FitnessProfile', userData);
+      } else {
+        navigation.navigate('Complete', userData);
+      }
+    } catch (error) {
+      console.error('Error saving user data:', error);
+      showError('Error', 'There was a problem saving your information. Please try again.');
     }
   };
 
      const handleSkip = async () => {
     try {
-      await AsyncStorage.setItem('onboardingComplete', 'true');
-      // Just set the flag - the App.tsx will handle the navigation
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
+      await updateOnboardingStatus(true);
+      // Let the root navigator handle navigation based on onboarding status
     } catch (error) {
       console.error('Skip error:', error);
     }
@@ -138,6 +146,15 @@ export default function BasicInfoScreen({ navigation, route }: any) {
           <Text style={styles.secondaryButtonText}>Skip</Text>
         </TouchableOpacity>
       </View>
+
+      <CustomAlert 
+        visible={isVisible}
+        onClose={hideAlert}
+        title={alertConfig?.title || ''}
+        message={alertConfig?.message || ''}
+        type={alertConfig?.type}
+        buttons={alertConfig?.buttons}
+      />
     </View>
   );
 }

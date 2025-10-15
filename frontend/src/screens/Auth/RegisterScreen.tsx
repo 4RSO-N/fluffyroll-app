@@ -7,13 +7,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { useCustomAlert } from '../../hooks/useCustomAlert';
+import CustomAlert from '../../components/CustomAlert';
 
 export default function RegisterScreen({ navigation }: any) {
   const [displayName, setDisplayName] = useState('');
@@ -24,28 +25,29 @@ export default function RegisterScreen({ navigation }: any) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register } = useAuth();
+  const { alertConfig, isVisible, hideAlert, showError } = useCustomAlert();
 
   const handleRegister = async () => {
     if (!displayName || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+      showError('Error', 'Please fill in all fields');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      showError('Error', 'Passwords do not match');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+      showError('Error', 'Password must be at least 8 characters');
       return;
     }
 
     setLoading(true);
     try {
-      await register(email, password, displayName);
+      await register(displayName, email, password);
     } catch (error: any) {
-      Alert.alert('Registration Failed', error.message);
+      showError('Registration Failed', error.message);
     } finally {
       setLoading(false);
     }
@@ -157,6 +159,15 @@ export default function RegisterScreen({ navigation }: any) {
           </View>
         </View>
       </ScrollView>
+
+      <CustomAlert 
+        visible={isVisible}
+        onClose={hideAlert}
+        title={alertConfig?.title || ''}
+        message={alertConfig?.message || ''}
+        type={alertConfig?.type}
+        buttons={alertConfig?.buttons}
+      />
     </KeyboardAvoidingView>
   );
 }

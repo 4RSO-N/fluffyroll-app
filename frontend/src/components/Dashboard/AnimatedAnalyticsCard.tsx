@@ -7,12 +7,12 @@ import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme'
 const screenWidth = Dimensions.get('window').width;
 
 interface Props {
-  title: string;
-  data: any;
-  chartType: 'line' | 'bar';
-  color: string;
-  suffix?: string;
-  delay?: number;
+  readonly title: string;
+  readonly data: any;
+  readonly chartType: 'line' | 'bar';
+  readonly color: string;
+  readonly suffix?: string;
+  readonly delay?: number;
 }
 
 export default function AnimatedAnalyticsCard({
@@ -24,12 +24,12 @@ export default function AnimatedAnalyticsCard({
   delay = 0,
 }: Props) {
   const chartConfig = {
-    backgroundColor: Colors.surface,
-    backgroundGradientFrom: Colors.surface,
-    backgroundGradientTo: Colors.surface,
+    backgroundColor: 'transparent',
+    backgroundGradientFrom: 'rgba(255,255,255,0.1)',
+    backgroundGradientTo: 'rgba(255,255,255,0.05)',
     decimalPlaces: 0,
     color: (opacity = 1) => `${color}${Math.round(opacity * 255).toString(16)}`,
-    labelColor: (opacity = 1) => `${Colors.textSecondary}${Math.round(opacity * 255).toString(16)}`,
+    labelColor: (opacity = 1) => `rgba(255,255,255,${opacity * 0.9})`,
     style: {
       borderRadius: BorderRadius.lg,
     },
@@ -47,8 +47,9 @@ export default function AnimatedAnalyticsCard({
   const chartWidth = screenWidth - (Spacing.lg * 4);
 
   return (
-    <Animated.View entering={FadeInUp.delay(delay)} style={styles.container}>
-      <View style={styles.header}>
+    <Animated.View entering={FadeInUp.delay(delay)} style={styles.outerContainer}>
+      <View style={styles.container}>
+        <View style={styles.header}>
         <Text style={styles.title}>{title}</Text>
         <View style={[styles.colorIndicator, { backgroundColor: color }]} />
       </View>
@@ -90,21 +91,23 @@ export default function AnimatedAnalyticsCard({
           7-day average: {Math.round(data.datasets[0].data.reduce((a: number, b: number) => a + b, 0) / 7)}{suffix}
         </Text>
       </View>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.md,
+  },
   container: {
-    backgroundColor: Colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
     marginBottom: Spacing.md,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   header: {
     flexDirection: 'row',
@@ -115,7 +118,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSizes.lg,
     fontWeight: '700',
-    color: Colors.text,
+    color: 'white',
   },
   colorIndicator: {
     width: 12,
@@ -134,11 +137,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
+    borderTopColor: 'rgba(255,255,255,0.2)',
   },
   summaryText: {
     fontSize: FontSizes.sm,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.8)',
     fontWeight: '500',
   },
 });

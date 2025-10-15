@@ -1,28 +1,63 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../contexts/AuthContext';
 import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
 
 export default function WelcomeScreen({ navigation }: any) {
-      const handleSkip = async () => {
+  const { updateOnboardingStatus } = useAuth();
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
+
+  useEffect(() => {
+    checkExistingProfile();
+  }, []);
+
+  const checkExistingProfile = async () => {
     try {
-      await AsyncStorage.setItem('onboardingComplete', 'true');
-      setLoading(true);
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
+      const userProfile = await AsyncStorage.getItem('user_profile');
+      const userData = await AsyncStorage.getItem('userData');
+      
+      if (userProfile) {
+        const profile = JSON.parse(userProfile);
+        // Check if user has filled basic info (name, birthday, gender, height, weight)
+        if (profile.name && profile.birthday && profile.gender && profile.height && profile.currentWeight) {
+          setHasExistingProfile(true);
+        }
+      } else if (userData) {
+        const data = JSON.parse(userData);
+        // Check if user has filled basic info from old userData format
+        if (data.name && data.age && data.gender && data.height && data.weight) {
+          setHasExistingProfile(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error checking existing profile:', error);
+    }
+  };
+
+  const handleGetStarted = async () => {
+    if (hasExistingProfile) {
+      // User already has profile data, skip onboarding
+      await updateOnboardingStatus(true);
+    } else {
+      // New user, start onboarding
+      navigation.navigate('BasicInfo', { goals: [] });
+    }
+  };
+
+  const handleSkip = async () => {
+    try {
+      await updateOnboardingStatus(true);
     } catch (error) {
       console.error('Skip error:', error);
     }
   };
 
-
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.emoji}>🌟</Text>
-        <Text style={styles.title}>Welcome to AuraSync!</Text>
+        <Text style={styles.emoji}>�</Text>
+        <Text style={styles.title}>Welcome to FluffyRoll!</Text>
         <Text style={styles.subtitle}>
           Let's personalize your wellness journey in just a few steps
         </Text>
@@ -46,9 +81,11 @@ export default function WelcomeScreen({ navigation }: any) {
       <View style={styles.buttons}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate('OnboardingGoals')}
+          onPress={handleGetStarted}
         >
-          <Text style={styles.primaryButtonText}>Get Started</Text>
+          <Text style={styles.primaryButtonText}>
+            {hasExistingProfile ? 'Continue to Dashboard' : 'Get Started'}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
